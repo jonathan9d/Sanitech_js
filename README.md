@@ -1,72 +1,215 @@
-# Sanitech 3.2 — Gestion des flux & présences
+# Sanitech 3.2 — Attendance & Access Management
 
-Application de gestion des présences (pointage QR & selfie, demandes d'absence,
-statistiques, calendrier, automatisations, sécurité PIN), **100 % hors-ligne** :
-aucune connexion internet n'est requise — polices, icônes et base de données
-sont embarquées localement.
+**Sanitech** is a fully offline attendance and access management application designed for QR-code check-in, selfie verification, absence requests, statistics, calendars, automation, and PIN-based security.
 
-## Base de données SQLite
+> **100% Offline** — No internet connection, server, or user account is required. All application assets, including fonts, icons, and the database engine, are bundled locally.
 
-- La persistance repose sur **SQLite** (moteur [sql.js](https://sql.js.org)
-  compilé en WebAssembly, embarqué dans `js/vendor/`).
-- Le fichier de base est conservé automatiquement dans **IndexedDB**
-  (repli localStorage si IndexedDB est indisponible).
-- Sauvegarde / restauration d'un fichier `.db` : Paramètres → Données.
-- Migration automatique des données de l'ancienne version (localStorage)
-  au premier lancement.
-- Toutes les données restent sur la machine : **aucun serveur, aucun compte**.
+---
 
-## Structure du projet
+##  Key Features
 
+* **QR Code Attendance** — Check in and out using QR badges.
+* **Selfie Verification** — Capture a selfie during attendance operations.
+* **User Management** — Create, edit, view, and manage users.
+* **Attendance Logs** — Track and review attendance history.
+* **Absence Requests** — Submit and manage absence requests.
+* **Statistics & Analytics** — View attendance statistics and trends.
+* **Calendar** — Browse attendance and activity by date.
+* **Automation** — Built-in application automations and workflows.
+* **PIN Security** — Protect sensitive areas with a configurable PIN.
+* **Data Export** — Export data as CSV, JSON, SQLite, or PDF reports.
+* **Database Backup & Restore** — Save and restore the complete local database.
+* **Light & Dark Themes** — Fully integrated theme support.
+* **Mobile-Friendly UI** — Optimized for desktop and Android/mobile environments.
+
+---
+
+##  Local SQLite Database
+
+Sanitech uses **SQLite** as its local database engine through [sql.js](https://sql.js.org/), compiled to WebAssembly and fully embedded within the application.
+
+### Data Persistence
+
+* SQLite is powered locally through **WebAssembly**.
+* The database is automatically persisted in **IndexedDB**.
+* **localStorage** is used as a fallback when IndexedDB is unavailable.
+* No external database server is required.
+* No cloud synchronization is performed.
+* All user data remains on the local machine.
+
+### Backup & Restore
+
+A complete SQLite database can be exported and restored from:
+
+**Settings → Data**
+
+Database files use the standard `.db` format.
+
+### Data Migration
+
+Sanitech automatically detects and migrates data from previous versions that used `localStorage`.
+
+The migration is performed automatically on the first launch of the new version.
+
+---
+
+##  Project Structure
+
+```text
+Sanitech/
+│
+├── index.html
+│   └── Main application shell, screens, dialogs and views
+│
+├── css/
+│   ├── base.css
+│   │   └── Variables, themes, local fonts, layout and splash screen
+│   │
+│   ├── components.css
+│   │   └── Buttons, top bar, navigation, sheets, toasts and skeletons
+│   │
+│   ├── pages.css
+│   │   └── Application pages and interfaces
+│   │
+│   └── print.css
+│       └── Print and PDF report styles
+│
+├── js/
+│   ├── vendor/
+│   │   ├── sql-wasm.js
+│   │   │   └── sql.js WebAssembly loader
+│   │   │
+│   │   └── sql-wasm-b64.js
+│   │       └── Embedded WebAssembly SQLite engine
+│   │
+│   ├── helpers.js
+│   │   └── Utility functions, formatting, avatars and QR helpers
+│   │
+│   ├── ui.js
+│   │   └── UI components, sounds, notifications, dialogs and themes
+│   │
+│   ├── db.js
+│   │   └── SQLite database layer, schema and persistence
+│   │
+│   ├── state.js
+│   │   └── Application state and demo data
+│   │
+│   ├── qr.js
+│   │   └── Local QR code generation
+│   │
+│   ├── auth.js
+│   │   └── Authentication, registration and password recovery
+│   │
+│   ├── nav.js
+│   │   └── Navigation, swipe gestures and pull-to-refresh
+│   │
+│   ├── pointage.js
+│   │   └── Check-in/out, badge terminal and selfie verification
+│   │
+│   ├── users.js
+│   │   └── User management, profiles, forms and trash
+│   │
+│   ├── logs.js
+│   │   └── Attendance logs, daily activity and calendar
+│   │
+│   ├── requests.js
+│   │   └── Absence request management
+│   │
+│   ├── stats.js
+│   │   └── Statistics, charts and dashboard widgets
+│   │
+│   ├── exports.js
+│   │   └── CSV, JSON, SQLite and PDF exports
+│   │
+│   ├── settings.js
+│   │   └── Settings, PIN security and application locking
+│   │
+│   └── app.js
+│       └── Application initialization and automation
+│
+└── fonts/
+    ├── samsungone-400.woff
+    ├── samsungone-600.woff
+    ├── samsungone-700.woff
+    ├── samsungone-800.woff
+    └── material-symbols-rounded.woff2
 ```
-index.html               Coquille de l'application (écrans, feuilles, dialogues)
-css/
-  base.css               Variables, thèmes, polices locales, coquille, splash
-  components.css         Boutons, topbar, navigation, feuilles, toasts, skeletons
-  pages.css              Écrans : authentification, utilisateurs, journal, stats…
-  print.css              Rapports PDF (impression)
-js/
-  vendor/
-    sql-wasm.js          Chargeur sql.js (SQLite → WebAssembly)
-    sql-wasm-b64.js      Moteur WebAssembly embarqué (base64, hors-ligne)
-  helpers.js             Utilitaires (formatage, avatars, QR…)
-  ui.js                  Sons, toasts, dialogues, feuilles, thème, infobulles
-  db.js                  Couche SQLite : schéma, chargement, persistance
-  state.js               État applicatif, données de démonstration
-  qr.js                  Générateur de QR codes (implémentation locale)
-  auth.js                Connexion, inscription, mot de passe oublié
-  nav.js                 Navigation, gestes (swipe, pull-to-refresh)
-  pointage.js            Pointage entrée/sortie, terminal de badge, selfie
-  users.js               Utilisateurs, formulaire, profil, corbeille
-  logs.js                Journal, « Aujourd'hui », calendrier
-  requests.js            Demandes d'absence
-  stats.js               Statistiques, graphiques, widgets
-  exports.js             CSV, JSON, SQLite, rapport PDF
-  settings.js            Paramètres, code PIN, verrouillage
-  app.js                 Automatisations, initialisation
-fonts/
-  samsungone-400.woff / 600.woff / 700.woff / 800.woff  (police SamsungOne)
-  material-symbols-rounded.woff2
-```
 
-## Navigation
+---
 
-- Les **Réglages** sont accessibles via l'engrenage ⚙ de la barre supérieure
-  (à côté du thème clair/sombre et des notifications).
-- Une **barre de recherche globale** est toujours visible dans la barre
-  supérieure (utilisateurs + journal) et s'élargit au focus.
-- Sur mobile/Android : glissez l'écran **vers la gauche** pour l'onglet suivant,
-  **vers la droite** pour le précédent.
+##  Navigation
 
-## Développement
+### Settings
 
-Les dépendances (`sql.js`, polices) sont **vendorisées** dans le projet :
-elles ne sont nécessaires que pour régénérer les fichiers locaux.
+Application settings are accessible through the **⚙ Settings** icon in the top navigation bar, next to the theme and notification controls.
+
+### Global Search
+
+A **global search bar** is permanently available in the top navigation area.
+
+It can be used to quickly search through supported sections such as:
+
+* Users
+* Attendance logs
+* Other application data
+
+The search bar expands automatically when focused.
+
+### Mobile Navigation
+
+On Android and mobile devices, swipe gestures can be used to navigate between application sections:
+
+* **Swipe left** → Next section
+* **Swipe right** → Previous section
+
+---
+
+##  Development
+
+Sanitech is designed to operate independently of external services.
+
+Development dependencies such as `sql.js` and local fonts are **vendorized** and bundled with the project. They are only required when rebuilding or regenerating local assets.
+
+### Install Development Dependencies
 
 ```bash
-npm install            # réinstalle les dépendances de développement
+npm install
 ```
 
-## Licence
+This restores the development dependencies defined by the project.
 
-© 2026 Sanitech — Tous droits réservés.
+---
+
+##  Privacy & Offline Architecture
+
+Sanitech follows a **local-first architecture**.
+
+No internet connection is required for normal operation.
+
+The application does not require:
+
+* A remote server
+* A cloud database
+* An online account
+* External API requests
+* Internet access for bundled assets
+
+Application data is stored locally on the user's device.
+
+> **Your data stays on your machine.**
+
+---
+
+##  Version
+
+**Current version:** `3.2.0`
+
+**Release:** `v3.2.0`
+
+---
+
+##  License
+
+**© 2026 Sanitech. All rights reserved.**
+
+This software and its source code are proprietary. Unauthorized copying, modification, distribution, or commercial use is prohibited without prior permission from the copyright holder.

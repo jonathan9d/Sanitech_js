@@ -1,0 +1,10 @@
+{
+  "appId": "com.sanitech.app",
+  "appName": "Sanitech",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#000000"
+  }
+}

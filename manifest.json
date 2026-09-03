@@ -1,0 +1,16 @@
+{
+  "name": "Sanitech — Gestion des flux & présences",
+  "short_name": "Sanitech",
+  "description": "Gestion des flux et présences : pointage QR & selfie, demandes d'absence, statistiques, calendrier, automatisations et sécurité PIN. 100 % hors-ligne, base de données SQLite locale.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#081527",
+  "theme_color": "#0d6ef2",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

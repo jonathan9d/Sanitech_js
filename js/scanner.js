@@ -405,16 +405,8 @@ function initScannerTab() {
       }
     });
   }
-
-  $$('#scan-modes .chip').forEach(c => {
-    c.addEventListener('click', () => {
-      scanMode = c.dataset.mode || 'auto';
-      $$('#scan-modes .chip').forEach(x => x.classList.toggle('active', x === c));
-      beep('tap');
-      const labels = { auto: 'Bascule automatique Entrée/Sortie', in: 'Pointage Entrée forcé', out: 'Pointage Sortie forcé' };
-      toast(labels[scanMode] || scanMode, 'tune', 'info');
-    });
-  });
+  /* Mode forcé retiré : le scan bascule automatiquement Entrée ↔ Sortie. */
+  scanMode = 'auto';
 }
 
 async function probeEspManual() {

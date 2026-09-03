@@ -1,6 +1,6 @@
 /* Test complémentaire v3.2 — pointage, QR, persistance, exports, demandes. */
 import puppeteer from 'puppeteer-core';
-const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/www/index.html';
+const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/www/index.html?tour=off';
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const SHOTS = 'C:/Users/USER/Documents/projets/Sanitech_js/tests/shots';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -48,12 +48,12 @@ const qr = await page.evaluate(() => {
 });
 ok(qr.w > 0 && qr.dark > 0, 'QR code généré (' + qr.w + 'px, ' + qr.dark + ' échantillons)');
 await shot('10-badge-qr.png');
-// Scanner : le QR "SANITECH;SAN-1001" est bien reconnu par la logique de l'app
+// Scanner : le QR "SANITECH;<uid>" est bien reconnu par la logique de l'app (uid '36' de la démo)
 const scanOk = await page.evaluate(() => {
-  const user = state.users.find(u => u.uid === 'SAN-1001');
+  const user = state.users.find(u => u.uid === '36');
   return !!user;
 });
-ok(scanOk, 'UID SAN-1001 présent en base (cible du badge)');
+ok(scanOk, 'UID 36 présent en base (cible du badge)');
 await page.$eval('#sheet-qr .shclose', b => b.click());
 await sleep(300);
 
@@ -112,7 +112,7 @@ const persist = await page.evaluate(() => ({
   stateUsers: state.users.length,
   reqs: state.requests.filter(r => r.status === 'approved').length
 }));
-ok(persist.dbUsers === 8 && persist.stateUsers === 8, 'Persistance SQLite : 8 utilisateurs après rechargement');
+ok(persist.dbUsers === 7 && persist.stateUsers === 7, 'Persistance SQLite : 7 utilisateurs après rechargement');
 ok(persist.reqs >= 1, 'Demande approuvée persistée');
 
 // Verrouillage PIN + déverrouillage

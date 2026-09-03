@@ -3,7 +3,26 @@
    Liste des utilisateurs, formulaire, profil à onglets, corbeille.
    ===================================================================== */
 /* ================= UTILISATEURS ================= */
-let uFilter = 'all', uSearch = '', detailId = null, detailTab = 'info', trashSel = new Set();
+let uFilter = 'all', uSearch = '', uService = 'all', detailId = null, detailTab = 'info', trashSel = new Set();
+/* Liste des services connus : paramétrés + valeurs existantes sur les membres */
+function svcList() {
+  const s = [...(state.settings.services || [])];
+  state.users.forEach(u => { const d = (u.dept || '').trim(); if (d && !s.includes(d)) s.push(d) });
+  return s;
+}
+function fillSvcFilter() {
+  const el = $('#ufilter-svc'); if (!el) return;
+  const sel = uService === 'all' || !svcList().includes(uService) ? 'all' : uService;
+  el.innerHTML = '<option value="all">Tous les services</option>' + svcList().map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  el.value = sel;
+}
+function fillSvcForm(current) {
+  const el = $('#uf-dept'); if (!el) return;
+  const svcs = svcList();
+  const keep = current && !svcs.includes(current) ? [current] : [];
+  el.innerHTML = '<option value="">—</option>' + keep.concat(svcs).map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  el.value = current || '';
+}
 function visibleUsers() {
   const q = norm(uSearch);
   return state.users.filter(u => {
@@ -11,6 +30,7 @@ function visibleUsers() {
     if (uFilter === 'out' && (u.archived || u.presence !== 'out')) return false;
     if (uFilter === 'arch' && !u.archived) return false;
     if (uFilter === 'all' && u.archived) return false;
+    if (uFilter !== 'trash' && uService !== 'all' && (u.dept || '') !== uService) return false;
     if (q && !(norm(u.prenom).includes(q) || norm(u.nom).includes(q))) return false;
     return true;
   }).sort((a, b) => a.prenom.localeCompare(b.prenom, 'fr'));
@@ -18,6 +38,8 @@ function visibleUsers() {
 function lateToday(u) { return state.logs.some(l => l.userId === u.id && l.type === 'in' && l.late && dayKey(l.ts) === dayKey(Date.now())) }
 function renderUsers() {
   const el = $('#ulist');
+  fillSvcFilter();
+  const sf = $('#svc-filter'); if (sf) sf.style.display = uFilter === 'trash' ? 'none' : '';
   el.classList.toggle('gridview', state.settings.uview === 'grid' && uFilter !== 'trash');
   if (uFilter === 'trash') {
     trashSel = new Set();
@@ -81,8 +103,11 @@ function renderUsers() {
     const mx = Math.max(thr, ht) || 1;
     const pct = Math.min(100, ht / mx * 100), mk = Math.min(97, thr / mx * 100);
     const pres = u.presence === 'in';
+    const ext = [];
+    if (u.tel) ext.push(`<span class="mi">call</span>${esc(u.tel)}`);
+    if (u.adresse) ext.push(`<span class="mi">location_on</span>${esc(u.adresse)}`);
     return `<article class="ucard ${u.archived ? 'arch' : ''}${anim}" style="${anim ? 'animation-delay:' + Math.min(i * 45, 380) + 'ms' : ''}" data-id="${u.id}">
-      ${avatarHTML(u, 48)}
+      ${avatarHTML(u, 50)}
       <div class="u-meta">
         <div class="u-top">
           <h4>${esc(u.prenom)} ${esc(u.nom)}${lateToday(u) ? '<span class="mi" style="color:var(--warn);font-size:14px;vertical-align:-2px" title="Retard aujourd\u2019hui">warning</span>' : ''}</h4>
@@ -90,7 +115,8 @@ function renderUsers() {
             ${u.archived ? '<span class="mi">archive</span>Archivé' : pres ? '<i class="dot"></i>Présent' : 'Sortie'}
           </span>
         </div>
-        <p><span class="mi">badge</span>${u.uid}&nbsp;·&nbsp;${esc(u.role)}${u.dept ? '&nbsp;·&nbsp;' + esc(u.dept) : ''}</p>
+        <p class="u-tags"><span class="mi">badge</span>${esc(u.uid)}&nbsp;·&nbsp;${esc(u.role)}${u.dept ? '&nbsp;·&nbsp;' + esc(u.dept) : ''}</p>
+        ${ext.length ? `<p class="u-ext">${ext.join('<span class="sep">·</span>')}</p>` : ''}
         ${u.archived ? '' : `<div class="u-hours"><div class="ubar" data-tip="Heures aujourd'hui (repère : seuil HS)"><i style="width:${pct}%"></i><em style="left:${mk}%"></em></div><span>${fmtDur(ht)}</span></div>`}
       </div>
       <div class="u-acts">
@@ -224,6 +250,11 @@ $('#uchips').addEventListener('click', e => {
   uFilter = c.dataset.f; $$('#uchips .chip').forEach(x => x.classList.toggle('active', x === c));
   beep('tap'); skelList('#ulist', renderUsers);
 });
+$('#ufilter-svc').addEventListener('change', e => {
+  uService = e.target.value;
+  beep('tap'); renderUsers();
+  toast(uService === 'all' ? 'Filtre service : tous' : 'Filtre service : ' + uService, 'apartment', 'info');
+});
 let st1; $('#usearch').addEventListener('input', e => {
   clearTimeout(st1); $('#sbar').classList.toggle('has', !!e.target.value);
   st1 = setTimeout(() => { uSearch = e.target.value; renderUsers() }, 120);
@@ -276,7 +307,7 @@ function openUserForm(id) {
   $('#uf-title').textContent = u ? 'Modifier l\u2019utilisateur' : 'Nouvel utilisateur';
   $('#uf-prenom').value = u ? u.prenom : ''; $('#uf-nom').value = u ? u.nom : '';
   $('#uf-email').value = u ? u.email : ''; $('#uf-tel').value = u ? u.tel || '' : '';
-  $('#uf-naissance').value = u ? u.naissance || '' : ''; $('#uf-dept').value = u ? u.dept || '' : '';
+  $('#uf-naissance').value = u ? u.naissance || '' : ''; fillSvcForm(u ? (u.dept || '') : '');
   $('#uf-role').value = u ? u.role : 'Agent'; $('#uf-statut').value = u ? u.statut : 'Actif';
   $('#uf-adresse').value = u ? u.adresse || '' : '';
   /* ID : modifiable, pré-rempli avec la valeur actuelle (ou le prochain automatique) */
@@ -312,7 +343,7 @@ $('#fab').onclick = () => { if (tab === 'users') openUserForm(); else if (tab ==
 function statutPill(s) { return s === 'Actif' ? 'actif' : s === 'En congé' ? 'conge' : 'susp' }
 function logMini(l, withPhoto) {
   const u = state.users.find(x => x.id === l.userId);
-  return `<div class="lcard ${l.type}">
+  return `<div class="lcard ${l.type}" data-log="${l.id}">
     ${u ? avatarHTML(u, 38) : `<span class="avatar av-c" style="width:38px;height:38px;font-size:13px">${esc((l.name || '?').split(' ').map(w => w[0]).join(''))}</span>`}
     <div class="l-meta"><b>${esc(l.name)}</b><span>${u ? u.uid : ''}${u && u.dept ? ' · ' + esc(u.dept) : ''}</span></div>
     ${withPhoto && l.photo ? `<img class="l-photo" src="${l.photo}" alt="selfie" data-phsrc="${l.photo}">` : ''}
@@ -320,6 +351,7 @@ function logMini(l, withPhoto) {
       <span class="tag ${l.late ? 'warn' : ''}"><span class="mi">${l.late ? 'warning' : typeIcon(l.type)}</span>${l.late ? 'Retard' : (l.type === 'in' ? 'Entrée' : 'Sortie')}</span>
       ${l.source && l.source !== 'manual' && l.source !== 'seed' ? `<span class="src">${l.source === 'auto' ? 'Auto' : 'Badge'}</span>` : ''}
     </div>
+    <button class="l-edit rip" data-logedit="${l.id}" data-tip="Corriger ce pointage"><span class="mi">more_vert</span></button>
   </div>`;
 }
 function openDetail(id, keep) {
@@ -367,6 +399,15 @@ function openDetail(id, keep) {
       <button class="${pt('hours')}" data-pt="hours"><span class="mi">timer</span>Heures</button>
     </div>
     <div class="ptab ${pt('info')}" id="pt-info">
+      <div class="dsub">Badge QR</div>
+      <div class="dq-card">
+        <canvas id="detail-qr" width="145" height="145" style="width:104px;height:104px" title="Ouvrir le badge QR"></canvas>
+        <div class="dq-meta">
+          <b>${esc(u.uid)}</b>
+          <small>${u.archived ? 'Utilisateur archivé — pointage désactivé' : 'Badge de pointage — présentez ce QR au scanner'}</small>
+          <button type="button" class="btn soft-blue sm rip" id="dd-qr-lg"><span class="mi">qr_code</span>Agrandir</button>
+        </div>
+      </div>
       <div class="dsub">Contact</div>
       <div class="info-grid">
         <div class="info-card"><span class="mi">mail</span><div style="min-width:0"><small>Email</small><b>${esc(u.email)}</b></div></div>
@@ -412,6 +453,9 @@ function openDetail(id, keep) {
   bind('dd-toggle', () => togglePresence(u.id));
   bind('dd-restore', () => { u.archived = false; save(); beep('success'); toast(`${u.prenom} ${u.nom} restauré`, 'unarchive', 'ok'); renderUsers(); updateStack(); openDetail(u.id, true) });
   bind('dd-qr', () => openQR(u));
+  bind('dd-qr-lg', () => openQR(u));
+  const dqc = document.getElementById('detail-qr');
+  if (dqc) { drawQR(dqc, 'SANITECH;' + u.uid, 5); dqc.onclick = () => openQR(u) }
   bind('dd-edit', () => openUserForm(u.id));
   bind('dd-req', () => openRequestForm(u.id));
   bind('dd-newreq', () => openRequestForm(u.id));

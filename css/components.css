@@ -809,6 +809,63 @@ html.cb .ibtn.b-out {
    grid-column: 1/-1
 }
 
+/* QR code intégré au profil utilisateur */
+.dq-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: var(--surface2);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  padding: 13px;
+  margin-bottom: 4px;
+  box-shadow: var(--shadow)
+}
+
+.dq-card canvas {
+  background: #fff;
+  border-radius: 14px;
+  padding: 7px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  box-shadow: 0 4px 12px -6px rgba(10, 45, 100, .35);
+  transition: transform .2s var(--ease-bounce), box-shadow .2s
+}
+
+.dq-card canvas:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 18px -8px rgba(10, 45, 100, .4)
+}
+
+.dq-meta {
+  flex: 1;
+  min-width: 0
+}
+
+.dq-meta b {
+  font: 700 15px var(--font-d);
+  letter-spacing: 1.2px;
+  display: block
+}
+
+.dq-meta small {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+  margin: 2px 0 9px;
+  line-height: 1.4
+}
+
+.dq-meta .btn {
+  justify-content: center
+}
+
+[data-theme="dark"] .dq-card {
+  background: #0a0a0a;
+  border-color: #1c1c1c
+}
+
 .dgrid {
    margin: 12px 0 4px;
    border: 1.5px solid var(--line);
@@ -1767,19 +1824,6 @@ html.cb .ibtn.b-out {
 
 .authcard .fbox>.mi {
   font-size: 22px
-}
-
-/* ================= SCANNER : chips non coupées ================= */
-#scan-modes {
-  flex-wrap: wrap;
-  overflow-x: visible;
-  justify-content: center
-}
-
-#scan-modes .chip {
-  flex: 1 1 auto;
-  justify-content: center;
-  min-width: 0
 }
 
 /* ================= AVATAR : pastille de statut entièrement visible ================= */

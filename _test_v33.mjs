@@ -1,6 +1,6 @@
 /* Tests v3.3 — assertions fonctionnelles + captures d'écran approfondies. */
 import puppeteer from 'puppeteer-core';
-const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/www/index.html';
+const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/www/index.html?tour=off';
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const SHOTS = 'C:/Users/USER/Documents/projets/Sanitech_js/tests/shots';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -101,17 +101,18 @@ ok(parseFloat(nav.iconSize) >= 26, 'Nav : icônes agrandies (' + nav.iconSize + 
 ok(nav.bnavH >= 72, 'Navbar haute (' + Math.round(nav.bnavH) + 'px)');
 await shot('23-nav-whatsapp-mobile.png');
 
-// ============ SCANNER : chips non coupées ============
+// ============ SCANNER : chips non coupées + mode auto par défaut ============
 await page.$eval('.navbtn[data-tab="scanner"]', b => b.click());
 await sleep(600);
 const chips = await page.evaluate(() => {
-  const c = document.getElementById('scan-modes');
+  const c = document.getElementById('scan-sources');
   const btns = [...c.querySelectorAll('.chip')];
   const last = btns[btns.length - 1].getBoundingClientRect();
   const wrap = c.getBoundingClientRect();
-  return { scrollW: c.scrollWidth, clientW: c.clientWidth, lastVisible: last.right <= wrap.right + 1, wrap: getComputedStyle(c).flexWrap };
+  return { scrollW: c.scrollWidth, clientW: c.clientWidth, lastVisible: last.right <= wrap.right + 1, wrap: getComputedStyle(c).flexWrap, noModes: !document.getElementById('scan-modes') };
 });
 ok(chips.scrollW <= chips.clientW + 1 && chips.lastVisible, 'Chips scanner non coupées (wrap=' + chips.wrap + ')');
+ok(chips.noModes, 'Mode forcé Entrée/Sortie retiré du scanner');
 await shot('24-scanner-mobile.png');
 await page.$eval('.navbtn[data-tab="users"]', b => b.click());
 await sleep(600);
@@ -157,9 +158,9 @@ const lsb = await page.evaluate(() => {
   return getComputedStyle(inp).opacity === '1' && inp.getBoundingClientRect().width > 100;
 });
 ok(lsb, 'Barre de recherche journal toujours dépliée');
-await page.type('#lsearch', 'Aïcha');
+await page.type('#lsearch', 'Marc');
 await sleep(400);
-const lres = await page.evaluate(() => [...document.querySelectorAll('#llist .l-meta b')].every(b => b.textContent.includes('Aïcha')));
+const lres = await page.evaluate(() => [...document.querySelectorAll('#llist .l-meta b')].every(b => b.textContent.includes('Marc')));
 ok(lres, 'Recherche journal fonctionne');
 await page.$eval('#lclear', b => b.click());
 await sleep(300);

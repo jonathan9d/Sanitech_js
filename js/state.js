@@ -5,7 +5,7 @@
 /* ================= STATE ================= */
 const KEY = 'sanitech_v1';
 let state = null;
-function defaults() { return { accounts: [{ username: 'admin', pass: 'admin123', email: 'admin@sanitech.io' }], users: [], logs: [], settings: { theme: 'light', sound: true, notif: true, accent: '#0d6ef2', uview: 'list', period: 14, selfie: false, autoOut: { on: false, time: '19:00' }, lateTime: '08:30', textSize: 'S', pattern: 'none', cb: false, sessionLimit: 0, autoArch: { on: false, days: 60 }, summary: { on: true, time: '18:00' }, otThreshold: 8, dense: false, lateAlert: true, autoDark: { on: false, from: '20:00', to: '07:00' }, scanSource: 'phone', espCamUrl: 'http://192.168.4.1', kpis: [{ id: 'pres', on: true }, { id: 'in', on: true }, { id: 'out', on: true }, { id: 'total', on: true }, { id: 'assid', on: true }, { id: 'hours', on: true }, { id: 'late', on: false }, { id: 'ot', on: false }] }, session: null, sessionStart: null, seq: 1001, pin: { enabled: false, code: null, timeout: 3 }, requests: [], notifs: [], trash: [], autoOutLast: null, summaryLast: null } }
+function defaults() { return { accounts: [{ username: 'admin', pass: 'admin123', email: 'admin@sanitech.io' }], users: [], logs: [], settings: { theme: 'light', sound: true, notif: true, accent: '#0d6ef2', uview: 'list', period: 14, selfie: false, voice: true, services: ['Maintenance', 'Technique', 'Direction', 'Administration', 'Développement', 'Comptabilité'], tourDone: false, autoOut: { on: false, time: '19:00' }, lateTime: '08:30', textSize: 'S', pattern: 'none', cb: false, sessionLimit: 0, autoArch: { on: false, days: 60 }, summary: { on: true, time: '18:00' }, otThreshold: 8, dense: false, lateAlert: true, autoDark: { on: false, from: '20:00', to: '07:00' }, scanSource: 'phone', espCamUrl: 'http://192.168.4.1', kpis: [{ id: 'pres', on: true }, { id: 'in', on: true }, { id: 'out', on: true }, { id: 'total', on: true }, { id: 'assid', on: true }, { id: 'hours', on: true }, { id: 'late', on: false }, { id: 'ot', on: false }] }, session: null, sessionStart: null, seq: 1001, pin: { enabled: false, code: null, timeout: 3 }, requests: [], notifs: [], trash: [], autoOutLast: null, summaryLast: null } }
 /* Sauvegarde : écrit l'état dans la base SQLite (js/db.js). */
 function save() { if (dbReady) dbSyncState(); }
 function ensureState() {
@@ -25,24 +25,31 @@ function ensureState() {
   if (!state.settings.textSize) state.settings.textSize = 'M';
   if (!state.settings.pattern) state.settings.pattern = 'none';
   if (!state.settings.otThreshold) state.settings.otThreshold = 8;
+  if (state.settings.voice === undefined) state.settings.voice = true;
+  if (!Array.isArray(state.settings.services)) state.settings.services = d.settings.services.slice();
+  if (state.settings.tourDone === undefined) state.settings.tourDone = false;
   if (!state.settings.scanSource) state.settings.scanSource = 'phone';
   if (!state.settings.espCamUrl) state.settings.espCamUrl = 'http://192.168.4.1';
 }
 function purgeTrash() { state.trash = state.trash.filter(t => Date.now() - t.at < 30 * 864e5) }
 function mklog(u, type, ts) { return { id: uid(), userId: u.id, name: u.prenom + ' ' + u.nom, type, ts, source: 'seed', late: false, photo: null } }
 function seed() {
+  /* Email dérivé du nom : prenom.nom@suffixe (minuscules, sans accents) */
+  const mail = (prenom, nom) => (norm(prenom.split(/\s+/)[0]) + '.' + norm(nom)).replace(/[^a-z0-9.]/g, '') + '@sanitech.io';
+  /* Téléphone malgache standard aléatoire : +261 3X XX XXX XX */
+  const mgPhone = () => { const d = () => rnd(10); return '+261 ' + ['32', '33', '34'][rnd(3)] + ' ' + d() + d() + ' ' + d() + d() + d() + ' ' + d() + d() };
+  /* [prénom, nom, id badge, rôle, service, statut, présence, adresse] */
   const P = [
-    ['Aïcha', 'Diallo', 'aicha.diallo@sanitech.io', 'Administratrice', 'Direction', 'Actif', 'in', 'Dakar, Plateau', '1992-04-12', '+221 77 450 22 10', false],
-    ['Moussa', 'Traoré', 'moussa.traore@sanitech.io', 'Superviseur', 'Exploitation', 'Actif', 'in', 'Dakar, Yoff', '1988-11-03', '+221 76 118 90 42', false],
-    ['Claire', 'Dubois', 'claire.dubois@sanitech.io', 'Technicienne', 'Maintenance', 'Actif', 'out', 'Rufisque, Nord', '1995-02-21', '+221 70 233 41 87', false],
-    ['Karim', 'Benali', 'karim.benali@sanitech.io', 'Agent', 'Collecte', 'Actif', 'in', 'Pikine, Ouest', '1990-07-15', '+221 77 902 15 66', false],
-    ['Sophie', 'Martin', 'sophie.martin@sanitech.io', 'Comptable', 'Finance', 'Actif', 'out', 'Dakar, Mermoz', '1986-09-28', '+221 78 410 77 23', false],
-    ['Ibrahima', 'Ndiaye', 'ibrahima.ndiaye@sanitech.io', 'Agent', 'Collecte', 'Actif', 'in', 'Guédiawaye', '1998-01-09', '+221 70 556 30 19', false],
-    ['Lucas', 'Moreau', 'lucas.moreau@sanitech.io', 'Technicien', 'Maintenance', 'En congé', 'out', 'Thiaroye', '1993-05-17', '+221 76 884 52 08', false],
-    ['Nadia', 'Cherif', 'nadia.cherif@sanitech.io', 'Agente', 'Exploitation', 'Actif', 'out', 'Ngor, Almadies', '1991-12-05', '+221 77 300 68 41', true]
+    ['Arotia Tolotra', 'RASOLONIAINA', '1', 'Agent', '', 'Actif', 'in', 'Sabotsy'],
+    ['Mamisoa Johan', 'RAKOTOZANAY', '25', 'Agent', '', 'Actif', 'out', '67 Ha'],
+    ['Marc Fredderman', 'RAHARISON', '30', 'Agent', '', 'Actif', 'in', 'Ambohipo'],
+    ['Tsinjo Nantenaina', 'RAZANAVAHY', '31', 'Agent', '', 'Actif', 'out', 'Ambohipo'],
+    ['Tsilavina Jonathan', 'RANDRIANARISON', '32', 'Développeur', 'Maintenance', 'Actif', 'in', 'Mahazo'],
+    ['Henintsoa', 'RAJOELINA', '33', 'Agent', '', 'Actif', 'out', 'Mahazo'],
+    ['Sandaniaina', 'RANDRIANARISOA', '36', 'Agent', '', 'Actif', 'in', 'Ambohitrarahaba']
   ];
   const now = new Date();
-  state.users = P.map((p, i) => ({ id: uid(), uid: 'SAN-' + (1001 + i), prenom: p[0], nom: p[1], email: p[2], role: p[3], dept: p[4], statut: p[5], presence: p[6], adresse: p[7], naissance: p[8], tel: p[9], archived: p[10], photo: null, lastMove: null, createdAt: now.getTime() - (30 - i) * 864e5 }));
+  state.users = P.map((p, i) => ({ id: uid(), uid: p[2], prenom: p[0], nom: p[1], email: mail(p[0], p[1]), role: p[3], dept: p[4], statut: p[5], presence: p[6], adresse: p[7], naissance: '', tel: mgPhone(), archived: false, photo: null, lastMove: null, createdAt: now.getTime() - (30 - i) * 864e5 }));
   const logs = [];
   for (let d = 13; d >= 1; d--) {
     for (const u of state.users) {
@@ -62,6 +69,6 @@ function seed() {
   logs.sort((a, b) => a.ts - b.ts);
   state.logs = logs;
   state.users.forEach(u => { for (let i = logs.length - 1; i >= 0; i--) { if (logs[i].userId === u.id) { u.lastMove = logs[i].ts; break } } });
-  state.seq = 1001 + P.length;
+  state.seq = 1001;
 }
 

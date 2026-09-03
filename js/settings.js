@@ -20,6 +20,7 @@ function renderSettings() {
   $('#sw-notif').checked = state.settings.notif;
   $('#sw-notif2').checked = state.settings.notif;
   $('#sw-selfie').checked = state.settings.selfie;
+  $('#sw-voice').checked = state.settings.voice !== false;
   $('#sw-autoout').checked = state.settings.autoOut.on;
   $('#in-autoout').value = state.settings.autoOut.time;
   $('#in-late').value = state.settings.lateTime;
@@ -57,6 +58,10 @@ $('#sw-sound').addEventListener('change', e => {
   toast('Sons ' + (e.target.checked ? 'activés' : 'désactivés'), e.target.checked ? 'volume_up' : 'volume_off', 'info');
 });
 $('#sw-selfie').addEventListener('change', e => { state.settings.selfie = e.target.checked; save(); beep('tap'); toast('Selfie de pointage ' + (e.target.checked ? 'activé' : 'désactivé'), 'photo_camera', 'info') });
+$('#sw-voice').addEventListener('change', e => {
+  state.settings.voice = e.target.checked; save(); beep('tap');
+  toast('Annonce vocale ' + (e.target.checked ? 'activée' : 'désactivée'), 'record_voice_over', 'info');
+});
 $('#sw-autoout').addEventListener('change', e => { state.settings.autoOut.on = e.target.checked; save(); beep('tap'); toast('Sortie automatique ' + (e.target.checked ? 'activée à ' + state.settings.autoOut.time : 'désactivée'), 'event_repeat', 'info') });
 $('#in-autoout').addEventListener('change', e => { state.settings.autoOut.time = e.target.value || '19:00'; save(); toast('Sortie automatique à ' + state.settings.autoOut.time, 'schedule', 'info') });
 $('#in-late').addEventListener('change', e => { state.settings.lateTime = e.target.value || '08:30'; save(); toast('Heure limite : ' + state.settings.lateTime, 'alarm', 'info') });
@@ -185,4 +190,96 @@ $('#lk-pass-go').onclick = () => {
   else { $('#lk-err').textContent = 'Mot de passe incorrect'; beep('error') }
 };
 $('#lk-pass-in').addEventListener('keydown', e => { if (e.key === 'Enter') $('#lk-pass-go').click() });
+
+
+/* ================= SERVICES & DÉPARTEMENTS ================= */
+let svcEditId = null;
+function renderServices() {
+  const el = $('#svc-list'); if (!el) return;
+  const list = state.settings.services || [];
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="eic"><span class="mi">apartment</span></div><h4>Aucun service</h4><p>Ajoutez le premier service ci-dessous.</p></div>';
+    svcEditId = null;
+    return;
+  }
+  el.innerHTML = list.map((s, i) => {
+    const n = state.users.filter(u => !u.archived && (u.dept || '') === s).length;
+    if (svcEditId === i) {
+      return `<div class="svc-row edit" data-i="${i}">
+        <span class="sicon b"><span class="mi">edit</span></span>
+        <div class="fbox" style="flex:1;min-width:0"><input id="svc-edit-in" value="${esc(s)}" maxlength="40" style="font-weight:600"></div>
+        <button class="ibtn b-in rip" data-act="save" data-tip="Enregistrer"><span class="mi">check</span></button>
+        <button class="ibtn rip" data-act="cancel" data-tip="Annuler"><span class="mi">close</span></button>
+      </div>`;
+    }
+    return `<div class="svc-row" data-i="${i}">
+      <span class="sicon b"><span class="mi">apartment</span></span>
+      <div class="stxt"><b>${esc(s)}</b><small>${n} membre${n > 1 ? 's' : ''}</small></div>
+      <button class="ibtn rip" data-act="edit" data-tip="Renommer"><span class="mi">edit</span></button>
+      <button class="ibtn dngr rip" data-act="del" data-tip="Supprimer"><span class="mi">delete</span></button>
+    </div>`;
+  }).join('');
+  const svcBox = $('#svc-list');
+  if (svcBox) {
+    svcBox.onclick = svcListClick;
+    svcBox.onkeydown = e => { if (e.key === 'Enter' && e.target && e.target.id === 'svc-edit-in') { e.preventDefault(); svcCommitEdit() } };
+  }
+}
+function svcListClick(e) {
+  const row = e.target.closest('.svc-row'); if (!row) return;
+  const act = e.target.closest('[data-act]'); if (!act) return;
+  const i = +row.dataset.i;
+  if (act.dataset.act === 'edit') { svcEditId = i; renderServices(); setTimeout(() => { const x = $('#svc-edit-in'); if (x) { x.focus(); x.select() } }, 60) }
+  else if (act.dataset.act === 'cancel') { svcEditId = null; renderServices() }
+  else if (act.dataset.act === 'save') svcCommitEdit();
+  else if (act.dataset.act === 'del') svcDelete(i);
+}
+function svcCommitEdit() {
+  const v = ($('#svc-edit-in') ? $('#svc-edit-in').value : '').trim();
+  const list = state.settings.services || [];
+  const old = svcEditId !== null ? list[svcEditId] : '';
+  svcEditId = null;
+  if (!v) { renderServices(); return }
+  if (old && v === old) { renderServices(); return }
+  if (list.includes(v)) { toast('Ce service existe déjà', 'error', 'err'); beep('error'); renderServices(); return }
+  if (old) {
+    list[list.indexOf(old)] = v;
+    state.users.forEach(u => { if ((u.dept || '') === old) u.dept = v });
+    toast(`Service renommé « ${old} » → « ${v} »`, 'drive_file_rename_outline', 'ok');
+  }
+  save(); beep('success');
+  renderServices();
+  if (tab === 'users') renderUsers();
+}
+function svcAdd(name) {
+  const v = (name || '').trim(); if (!v) return;
+  const list = state.settings.services || [];
+  if (list.includes(v)) { toast('Ce service existe déjà', 'error', 'err'); beep('error'); return }
+  list.push(v); save(); beep('success'); celebrate();
+  toast(`Service « ${v} » ajouté`, 'apartment', 'ok');
+  renderServices();
+  if (tab === 'users') renderUsers();
+}
+function svcDelete(i) {
+  const list = state.settings.services || [];
+  const s = list[i]; if (!s) return;
+  const n = state.users.filter(u => (u.dept || '') === s).length;
+  confirmDialog({
+    icon: 'apartment', title: `Supprimer « ${s} » ?`,
+    msg: n ? `Le service sera retiré de la liste et <b>${n} membre(s)</b> se verront sans service (à réaffecter dans leur profil).` : 'Ce service sera simplement retiré de la liste.',
+    ok: 'Supprimer', danger: true,
+    onOk: () => {
+      list.splice(i, 1);
+      state.users.forEach(u => { if ((u.dept || '') === s) u.dept = '' });
+      save(); beep('error');
+      toast(`Service « ${s} » supprimé`, 'delete', 'err');
+      renderServices();
+      if (tab === 'users') renderUsers();
+    }
+  });
+}
+$('#btn-services').onclick = () => { svcEditId = null; openSheet($('#sheet-services')); renderServices(); setTimeout(() => { const n = $('#svc-new'); if (n) n.focus() }, 350) };
+$('#svc-add-btn').onclick = () => { const n = $('#svc-new'); svcAdd(n ? n.value : ''); if (n) { n.value = ''; n.focus() } };
+$('#svc-new').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#svc-add-btn').click() } });
+/* Les clics sur les lignes sont reliés dans renderServices() (contenu régénéré à chaque action). */
 

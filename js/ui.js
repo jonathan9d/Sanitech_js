@@ -95,6 +95,7 @@ function applyTheme(mode, instant) {
     if (!instant) { setIc.classList.remove('pop'); void setIc.offsetWidth; setIc.classList.add('pop') }
   }
   const sw = $('#sw-theme'); if (sw) sw.checked = isDark;
+  applyAccent();
   if (tab === 'stats' && $('#app').classList.contains('active')) drawChart();
   /* Update theme-color meta for mobile browser chrome */
   const meta = document.querySelector('meta[name="theme-color"]');
@@ -104,14 +105,39 @@ $('#btn-theme').onclick = () => {
   const b = $('#btn-theme'); b.classList.add('spin'); setTimeout(() => b.classList.remove('spin'), 200);
   state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark'; save(); applyTheme(state.settings.theme); beep('tap');
 };
-const ACCENTS = [['#0d6ef2', 'Océan'], ['#0aa86c', 'Émeraude'], ['#7a5cff', 'Violet'], ['#f2740d', 'Coucher'], ['#e84b8f', 'Rose']];
+const ACCENTS = [['#0d6ef2', 'Océan'], ['#0aa86c', 'Émeraude'], ['#7a5cff', 'Violet'], ['#f2740d', 'Coucher'], ['#e84b8f', 'Rose'], ['#000000', 'Noir']];
+function curAccent() { return /^#[0-9a-f]{6}$/i.test(state.settings.accent || '') ? state.settings.accent : '#0d6ef2' }
 function buildAccents() {
-  $('#accents').innerHTML = ACCENTS.map(a => `<button class="accent-dot" data-c="${a[0]}" title="${a[1]}" style="background:${a[0]}"></button>`).join('');
-  $$('.accent-dot').forEach(b => b.onclick = () => { state.settings.accent = b.dataset.c; save(); applyAccent(); beep('pop'); toast('Couleur d\u2019accent : ' + b.title, 'palette', 'info') });
+  $('#accents').innerHTML = ACCENTS.map(a => `<button class="accent-dot" data-c="${a[0]}" title="${a[1]}" style="background:${a[0]}"></button>`).join('')
+    + `<button type="button" class="accent-dot acc-custom rip" id="acc-custom-btn" title="Personnaliser la couleur d\u2019accent"></button>`
+    + `<input type="color" id="acc-custom-input" value="${curAccent()}" hidden aria-hidden="true">`;
+  $$('.accent-dot[data-c]').forEach(b => b.onclick = () => { state.settings.accent = b.dataset.c; save(); applyAccent(); beep('pop'); toast('Couleur d\u2019accent : ' + b.title, 'palette', 'info') });
+  const btn = $('#acc-custom-btn'), inp = $('#acc-custom-input');
+  if (btn && inp) {
+    btn.onclick = () => { inp.value = curAccent(); inp.click() };
+    inp.addEventListener('input', () => { if (/^#[0-9a-f]{6}$/i.test(inp.value)) { state.settings.accent = inp.value; save(); applyAccent() } });
+    inp.addEventListener('change', () => { beep('pop'); toast('Couleur d\u2019accent personnalisée', 'palette', 'info') });
+  }
+}
+function hexLum(h) {
+  const n = String(h || '').replace('#', '');
+  if (n.length !== 6) return 1;
+  const lin = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4) };
+  const r = lin(parseInt(n.slice(0, 2), 16)), g = lin(parseInt(n.slice(2, 4), 16)), b = lin(parseInt(n.slice(4, 6), 16));
+  return .2126 * r + .7152 * g + .0722 * b;
+}
+function accentColor() {
+  const c = state.settings.accent || '#0d6ef2';
+  /* Accent très sombre (ex. Noir) : en thème sombre, on utilise un gris clair lisible pour que texte, icônes et fonds restent visibles. */
+  if (document.documentElement.dataset.theme === 'dark' && hexLum(c) < 0.06) return '#8a8a8a';
+  return c;
 }
 function applyAccent() {
-  document.documentElement.style.setProperty('--blue', state.settings.accent || '#0d6ef2');
-  $$('.accent-dot').forEach(b => b.classList.toggle('on', b.dataset.c === state.settings.accent));
+  document.documentElement.style.setProperty('--blue', accentColor());
+  const cur = curAccent();
+  $$('.accent-dot[data-c]').forEach(b => b.classList.toggle('on', b.dataset.c === cur));
+  const btn = $('#acc-custom-btn'); if (btn) btn.classList.toggle('on', !ACCENTS.some(a => a[0] === cur));
+  const inp = $('#acc-custom-input'); if (inp) inp.value = cur;
 }
 function applyTextSize() {
   const s = state.settings.textSize || 'M';

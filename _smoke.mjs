@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer-core';
 
-const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/index.html';
+const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/index.html?tour=off';
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let failures = 0;
@@ -30,11 +30,10 @@ ok(true, 'Connexion + liste utilisateurs (mobile)');
 // Polices modernes
 await page.evaluate(() => document.fonts.ready);
 const fonts = await page.evaluate(() => ({
-  inter: document.fonts.check('400 16px Inter') && document.fonts.check('700 16px Inter'),
-  sg: document.fonts.check('700 16px "Space Grotesk"'),
+  samsung: document.fonts.check('400 16px "SamsungOne"') && document.fonts.check('700 16px "SamsungOne"'),
   icons: document.fonts.check('16px "Material Symbols Rounded"')
 }));
-ok(fonts.inter && fonts.sg, 'Polices modernes Inter + Space Grotesk chargées');
+ok(fonts.samsung, 'Police SamsungOne chargée');
 ok(fonts.icons, 'Icônes Material Symbols chargées');
 
 // Menu d'actions (⋯)
@@ -49,7 +48,7 @@ await page.$eval('#act-list [data-act="dup"]', b => b.click());
 await sleep(600);
 const usersAfterDup = await page.evaluate(() => state.users.length);
 const hasCopy = await page.evaluate(() => state.users.some(u => u.prenom.includes('(copie)')));
-ok(usersAfterDup === 9 && hasCopy, 'Utilisateur dupliqué (9 utilisateurs)');
+ok(usersAfterDup === 8 && hasCopy, 'Utilisateur dupliqué (8 utilisateurs)');
 
 // Profil : page à part entière
 await page.$eval('#ulist .ucard', c => c.click());
@@ -94,11 +93,11 @@ await sleep(400);
 // Recherche journal
 await page.$eval('.navbtn[data-tab="logs"]', b => b.click());
 await sleep(600);
-await page.type('#lsearch', 'Aïcha');
+await page.type('#lsearch', 'Marc');
 await sleep(400);
 const lCount = await page.$$eval('#llist .lcard', els => els.length);
-const allAicha = await page.$$eval('#llist .l-meta b', els => els.every(e => e.textContent.includes('Aïcha')));
-ok(lCount > 0 && allAicha, 'Recherche journal fonctionne (' + lCount + ' résultats)');
+const allMarc = await page.$$eval('#llist .l-meta b', els => els.every(e => e.textContent.includes('Marc')));
+ok(lCount > 0 && allMarc, 'Recherche journal fonctionne (' + lCount + ' résultats)');
 
 // ============ BUREAU : responsive ============
 await page.setViewport({ width: 1280, height: 800 });
@@ -145,7 +144,7 @@ const afterReload = await page.evaluate(() => ({
   db: DB.exec('SELECT COUNT(*) AS n FROM users')[0].values[0][0],
   hasCopy: state.users.some(u => u.prenom.includes('(copie)'))
 }));
-ok(afterReload.users === 9 && afterReload.db === 9 && afterReload.hasCopy, 'Persistance SQLite après rechargement (9 utilisateurs, dont la copie)');
+ok(afterReload.users === 8 && afterReload.db === 8 && afterReload.hasCopy, 'Persistance SQLite après rechargement (8 utilisateurs, dont la copie)');
 
 // Thème
 await page.$eval('#btn-theme', b => b.click());

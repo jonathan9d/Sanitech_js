@@ -46,7 +46,10 @@ function finishPunch(id, type, source = 'manual', photo = null, opts = {}) {
   state.logs.push({ id: uid(), userId: u.id, name: u.prenom + ' ' + u.nom, type, ts: Date.now(), source, late, photo: photo || null });
   trimLogPhotos(); save();
   if (late && state.settings.lateAlert !== false) addNotif('warning_amber', `${u.prenom} ${u.nom} en retard`, `Entrée après ${state.settings.lateTime}.`);
-  if (!opts.silent) { beep('success'); toast(`${u.prenom} ${u.nom} — ${type === 'in' ? 'entrée' : 'sortie'} enregistrée${late ? ' (retard)' : ''}`, typeIcon(type), late ? 'info' : 'ok') }
+  if (!opts.silent) {
+    beep('success'); toast(`${u.prenom} ${u.nom} — ${type === 'in' ? 'entrée' : 'sortie'} enregistrée${late ? ' (retard)' : ''}`, typeIcon(type), late ? 'info' : 'ok');
+    if (state.settings.voice) speak(`${u.prenom} ${u.nom}, ${type === 'in' ? 'entrée' : 'sortie'} à ${fmtTime(Date.now())}${late ? ', en retard' : ''}`);
+  }
   renderUsers(); updateStack();
   if (tab === 'logs') renderLogsView();
   if (tab === 'stats') renderStats();

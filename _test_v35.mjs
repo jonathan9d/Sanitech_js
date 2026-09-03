@@ -2,7 +2,7 @@
    confirmation d'archivage, pastilles couleur responsives. */
 import puppeteer from 'puppeteer-core';
 import { existsSync } from 'node:fs';
-const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/www/index.html';
+const URL = 'file:///C:/Users/USER/Documents/projets/Sanitech_js/www/index.html?tour=off';
 const CHROME = ['C:/Program Files/Google/Chrome/Application/chrome.exe', process.env.LOCALAPPDATA + '/Google/Chrome/Application/chrome.exe'].find(p => existsSync(p));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let failures = 0;
@@ -63,7 +63,7 @@ const acc = await page.evaluate(() => {
   const row = document.querySelector('.setrow.accrow');
   return { n: dots.length, w: parseFloat(getComputedStyle(dots[0]).width), overflow: row.scrollWidth > row.clientWidth + 1 };
 });
-ok(acc.n === 5 && acc.w <= 27 && !acc.overflow, 'Pastilles couleurs petites & adaptées (' + acc.w + 'px, sans débordement)');
+ok(acc.n === 7 && acc.w <= 27 && !acc.overflow, 'Pastilles couleurs + personnalisée, adaptées (' + acc.n + ' pastilles, ' + acc.w + 'px, sans débordement)');
 await mouseClick('#accents .accent-dot:nth-child(3)');
 ok(await page.evaluate(() => state.settings.accent === '#7a5cff'), 'Clic pastille → accent appliqué');
 

@@ -124,3 +124,76 @@ function renderCal() {
   $$('#callogs .l-photo').forEach(p => p.onclick = () => { $('#imgview-img').src = p.dataset.phsrc; $('#imgview').classList.add('on') });
 }
 
+
+/* ================= CORRECTION D'UN POINTAGE ================= */
+let curLogId = null, curLogType = null;
+function findLog(id) { return state.logs.find(x => x.id === id) }
+/* Recalcule présence + lastMove d'un membre à partir de ses mouvements restants */
+function refreshUserFromLogs(u) {
+  if (!u) return;
+  const ls = state.logs.filter(x => x.userId === u.id).sort((a, b) => a.ts - b.ts);
+  const last = ls[ls.length - 1];
+  u.lastMove = last ? last.ts : null;
+  u.presence = last ? last.type : 'out';
+}
+function openLogEdit(l) {
+  if (!l) return;
+  curLogId = l.id; curLogType = l.type;
+  const u = state.users.find(x => x.id === l.userId);
+  $('#le-user').innerHTML = (u ? avatarHTML(u, 40) : '<span class="avatar av-c" style="width:40px;height:40px;font-size:13px">?</span>')
+    + `<div style="min-width:0"><b>${esc(l.name)}</b><small>${esc((u && u.uid) || '')} · ${dayLabel(dayKey(l.ts))}</small></div>`;
+  const d = new Date(l.ts);
+  $('#le-date').value = dayKey(l.ts);
+  $('#le-time').value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  syncLogTypeUI();
+  openSheet($('#sheet-logedit'));
+}
+function syncLogTypeUI() { $$('#le-typ .chip').forEach(c => c.classList.toggle('active', c.dataset.t === curLogType)) }
+$('#le-typ').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  curLogType = c.dataset.t; syncLogTypeUI(); beep('tap');
+});
+function refreshLogUI(l) {
+  renderUsers(); updateStack();
+  if (tab === 'logs') renderLogsView();
+  if (tab === 'stats') renderStats();
+  const u = l && state.users.find(x => x.id === l.userId);
+  if (u && curSheet && curSheet.id === 'sheet-detail' && detailId === u.id) openDetail(u.id, true);
+}
+$('#le-save').onclick = () => {
+  const l = findLog(curLogId); if (!l) return;
+  const d = $('#le-date').value, t = $('#le-time').value;
+  if (!d || !t || isNaN(new Date(d + 'T' + t + ':00').getTime())) { toast('Date et heure requises', 'error', 'err'); beep('error'); return }
+  const ts = new Date(d + 'T' + t + ':00').getTime();
+  l.ts = ts;
+  if (curLogType !== l.type) l.type = curLogType;
+  l.late = l.type === 'in' ? (dayKey(l.ts) === dayKey(Date.now()) && isLate()) : false;
+  state.logs.sort((a, b) => a.ts - b.ts);
+  refreshUserFromLogs(state.users.find(x => x.id === l.userId));
+  save(); beep('success'); celebrate();
+  toast('Pointage corrigé', 'schedule', 'ok');
+  closeSheet();
+  refreshLogUI(l);
+};
+$('#le-del').onclick = () => {
+  const l = findLog(curLogId); if (!l) return;
+  confirmDialog({
+    icon: 'delete', title: 'Supprimer ce mouvement ?',
+    msg: `Le pointage ${l.type === 'in' ? 'd\u2019entrée' : 'de sortie'} de <b>${esc(l.name)}</b> (${fmtDate(l.ts)} à ${fmtTime(l.ts)}) sera supprimé <b>définitivement</b> du journal.`,
+    ok: 'Supprimer', danger: true,
+    onOk: () => {
+      state.logs = state.logs.filter(x => x.id !== l.id);
+      refreshUserFromLogs(state.users.find(x => x.id === l.userId));
+      save(); beep('error'); closeSheet();
+      toast('Pointage supprimé du journal', 'delete', 'err');
+      refreshLogUI(l);
+    }
+  });
+};
+/* Ouverture de la correction depuis n'importe quelle liste de mouvements */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-logedit]'); if (!b) return;
+  e.stopPropagation();
+  openLogEdit(findLog(b.dataset.logedit));
+});
+

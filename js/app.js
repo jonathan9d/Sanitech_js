@@ -88,6 +88,8 @@ function enterApp() {
   // Update global lastActive
   try { window.lastActive = Date.now(); } catch (e) { }
   autoArchive();
+  /* Visite guidée du premier lancement (désactivable via ?tour=off) */
+  try { if (typeof startTourIfFirst === 'function') startTourIfFirst() } catch (e) { }
 }
 /* ================= DÉMARRAGE ================= */
 async function boot() {

@@ -857,10 +857,12 @@ select.tinput:focus {
 }
 
 .u-top h4 {
-  font: 700 15px var(--font-b);
-  white-space: nowrap;
+  font: 700 15px/1.25 var(--font-b);
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
   flex: 1;
   min-width: 0
 }
@@ -879,6 +881,27 @@ select.tinput:focus {
 
 .u-meta p .mi {
   font-size: 14px
+}
+
+.u-meta .u-ext {
+  font-weight: 400;
+  margin-top: 3px;
+  gap: 5px
+}
+
+.u-meta .u-ext .mi {
+  font-size: 13px;
+  color: color-mix(in srgb, var(--muted) 78%, var(--text))
+}
+
+.u-meta .u-ext .sep {
+  opacity: .55;
+  margin: 0 2px
+}
+
+#ulist.gridview .u-ext,
+#shell.dense .u-ext {
+  display: none
 }
 
 .u-hours {
@@ -1664,7 +1687,8 @@ html.cb .ring b {
 }
 
 .setrow:hover {
-  border-color: color-mix(in srgb, var(--blue) 40%, var(--line));
+  border-color: color-mix(in srgb, var(--blue) 42%, var(--line));
+  background: color-mix(in srgb, var(--blue) 7%, var(--surface));
   transform: translateY(-1px)
 }
 
@@ -1844,6 +1868,15 @@ select.tinput {
 .accent-dot.on::after {
   opacity: 1;
   transform: scale(1)
+}
+
+/* Pastille « Noir » : bordure lisible en thème sombre */
+[data-theme="dark"] .accent-dot[data-c="#000000"] {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25)
+}
+
+[data-theme="dark"] .accent-dot[data-c="#000000"].on {
+  box-shadow: 0 0 0 2.5px var(--surface), 0 0 0 5px var(--blue)
 }
 
 
@@ -2137,62 +2170,67 @@ select.tinput {
 
 .pin-dots {
   display: flex;
-  gap: 14px;
+  gap: 20px;
   justify-content: center;
-  margin: 16px 0 20px
+  margin: 18px 0 22px
 }
 
 .pin-dots i {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
-  border: 2px solid var(--line);
-  transition: .15s
+  border: 2.5px solid var(--line);
+  background: var(--surface2);
+  transition: .18s;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .1)
 }
 
 .pin-dots i.on {
   background: var(--grad);
   border-color: transparent;
-  transform: scale(1.2)
+  transform: scale(1.25);
+  box-shadow: 0 4px 12px -3px color-mix(in srgb, var(--blue) 55%, transparent)
 }
 
 .pinpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  max-width: 280px;
-  width: 100%;
+  gap: clamp(12px, 3.4vw, 18px);
+  width: min(100%, 400px);
   margin: 0 auto
 }
 
 .pinkey {
-  height: 58px;
-  border-radius: 18px;
+  aspect-ratio: 1/1;
+  border-radius: clamp(20px, 5.5vw, 28px);
   border: 1.5px solid var(--line);
-  background: var(--surface2);
-  font: 700 22px var(--font-d);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface2) 100%);
+  font: 700 clamp(22px, 6.4vw, 32px)/1 var(--font-d);
   color: var(--text);
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: transform .15s, background .15s, box-shadow .15s;
+  transition: transform .15s, background .2s, box-shadow .2s, border-color .2s;
   position: relative;
   overflow: hidden;
-  user-select: none
+  user-select: none;
+  box-shadow: 0 6px 14px -8px rgba(10, 45, 100, .28), inset 0 1px 0 rgba(255, 255, 255, .6)
 }
 
 .pinkey:hover {
-  border-color: color-mix(in srgb, var(--blue) 45%, var(--line));
-  background: var(--surface)
+  border-color: color-mix(in srgb, var(--blue) 55%, var(--line));
+  background: var(--surface);
+  box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--blue) 38%, transparent), inset 0 1px 0 rgba(255, 255, 255, .6)
 }
 
 .pinkey:active {
-  transform: scale(.92);
-  background: var(--blue-soft)
+  transform: scale(.9);
+  background: var(--blue-soft);
+  color: var(--blue)
 }
 
 .pinkey .mi {
-  font-size: 24px;
+  font-size: clamp(23px, 6vw, 30px);
   color: var(--muted)
 }
 
@@ -2206,7 +2244,8 @@ select.tinput {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 24px
+  padding: 24px;
+  overflow-y: auto
 }
 
 #lockscreen.on {
@@ -2214,18 +2253,21 @@ select.tinput {
   animation: fadeUp .3s both
 }
 
+#lockscreen #lk-zone {
+  width: min(100%, 420px);
+  display: flex;
+  flex-direction: column;
+  align-items: center
+}
+
 #lockscreen .pinpad {
-  max-width: 320px;
-  gap: 14px;
-  width: 100%
+  width: 100%;
+  gap: clamp(12px, 3vw, 16px)
 }
 
 #lockscreen .pinkey {
-  height: 66px;
-  border-radius: 20px;
-  font-size: 24px;
   background: var(--surface);
-  box-shadow: var(--shadow)
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .5)
 }
 
 .lk-mark {
@@ -3423,7 +3465,7 @@ select.tinput {
 }
 
 [data-theme="dark"] .setrow:hover {
-  background: #111111
+  background: color-mix(in srgb, var(--blue) 9%, #0a0a0a)
 }
 
 [data-theme="dark"] .ucard {
@@ -3494,17 +3536,24 @@ select.tinput {
 }
 
 [data-theme="dark"] .pin-dots i {
-  background: #1a1a1a;
-  border-color: #2a2a2a
+  background: #141414;
+  border-color: #2a2a2a;
+  box-shadow: none
+}
+
+[data-theme="dark"] .pin-dots i.on {
+  background: var(--grad)
 }
 
 [data-theme="dark"] .pinkey {
-  background: #111111;
-  border-color: #1c1c1c
+  background: linear-gradient(180deg, #101010 0%, #0d0d0d 100%);
+  border-color: #232323;
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .05)
 }
 
 [data-theme="dark"] .pinkey:hover {
-  background: #1a1a1a
+  background: #171717;
+  border-color: color-mix(in srgb, var(--blue) 50%, #232323)
 }
 
 /* =====================================================================
@@ -3669,5 +3718,325 @@ select.tinput {
 
   .accent-dot::after {
     background-size: 12px
+  }
+}
+
+/* ================= v3.3 — services, correction de pointage, couleur perso ================= */
+/* Filtre par service (écran Utilisateurs) */
+.svc-filter {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 15px;
+  padding: 0 12px;
+  margin: 0 0 12px;
+  height: 44px;
+  box-shadow: var(--shadow)
+}
+
+.svc-filter .mi {
+  color: var(--muted);
+  font-size: 20px;
+  flex: 0 0 auto
+}
+
+.svc-filter select {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: 0;
+  font: 600 13.5px var(--font-b);
+  color: var(--text);
+  cursor: pointer;
+  height: 100%
+}
+
+/* Gestionnaire de services */
+.svc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  transition: .18s
+}
+
+.svc-row:hover {
+  border-color: color-mix(in srgb, var(--blue) 42%, var(--line));
+  background: color-mix(in srgb, var(--blue) 7%, var(--surface))
+}
+
+.svc-row .stxt b {
+  font-size: 13.5px;
+  font-weight: 700;
+  display: block
+}
+
+.svc-row .stxt small {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 11px;
+  display: block;
+  margin-top: 1px
+}
+
+.svc-row .fbox {
+  height: 42px;
+  border-radius: 12px
+}
+
+.svc-row.edit {
+  align-items: center
+}
+
+.svc-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px
+}
+
+.svc-add .fbox {
+  flex: 1;
+  min-width: 0;
+  height: 46px
+}
+
+.svc-add .btn {
+  white-space: nowrap
+}
+
+/* Feuille « Corriger un pointage » */
+.le-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface2);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 4px
+}
+
+.le-user small {
+  display: block;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 11.5px;
+  margin-top: 2px
+}
+
+.le-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px
+}
+
+.le-fields .fbox {
+  height: 46px
+}
+
+.le-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px
+}
+
+.le-actions .btn {
+  white-space: nowrap
+}
+
+/* Bouton « corriger » sur les lignes du journal */
+.lcard .l-edit {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  transition: .15s;
+  margin-left: 2px
+}
+
+.lcard .l-edit:hover {
+  background: var(--blue-soft);
+  color: var(--blue)
+}
+
+.lcard .l-edit .mi {
+  font-size: 19px
+}
+
+/* Pastille de couleur personnalisée (spectre) */
+.accent-dot.acc-custom {
+  background: conic-gradient(#ff5d5d, #ffd23e, #5dff8b, #4ec3ff, #a06bff, #ff5d9e, #ff5d5d)
+}
+
+.accent-dot.acc-custom.on::after {
+  opacity: 1;
+  transform: scale(1)
+}
+
+/* ================= v3.3 — visite guidée (tour) ================= */
+#tourbox {
+  display: none
+}
+
+#tourbox.on {
+  display: block
+}
+
+#tourbox .t-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background: rgba(4, 14, 30, .35);
+  pointer-events: none;
+  animation: fadeUp .3s both
+}
+
+#tourbox .t-card {
+  position: fixed;
+  left: 50%;
+  bottom: max(88px, calc(env(safe-area-inset-bottom, 0px) + 78px));
+  transform: translateX(-50%);
+  width: min(400px, calc(100vw - 28px));
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
+  padding: 16px 18px 14px;
+  z-index: 200;
+  animation: tourIn .35s var(--ease-bounce) both;
+  color: var(--text)
+}
+
+@keyframes tourIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 18px)
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0)
+  }
+}
+
+.t-skip {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font: 700 11.5px var(--font-b);
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 9px;
+  letter-spacing: .2px
+}
+
+.t-skip:hover {
+  color: var(--danger)
+}
+
+.t-ic {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background: var(--grad);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  margin-bottom: 10px;
+  box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--blue) 70%, transparent)
+}
+
+.t-ic .mi {
+  font-size: 23px
+}
+
+.t-tx b {
+  display: block;
+  font: 700 16.5px var(--font-d);
+  margin-bottom: 3px;
+  padding-right: 60px
+}
+
+.t-tx p {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 400;
+  line-height: 1.55
+}
+
+.t-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px
+}
+
+.t-dots {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 5px
+}
+
+.t-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: .2s
+}
+
+.t-dots i.on {
+  width: 17px;
+  border-radius: 99px;
+  background: var(--grad)
+}
+
+#tourbox .t-ctrl .btn {
+  white-space: nowrap
+}
+
+.t-hl {
+  outline: 2.5px solid color-mix(in srgb, var(--blue) 85%, #fff);
+  outline-offset: 3px;
+  border-radius: 14px;
+  animation: tourPulse 1.6s ease-in-out infinite
+}
+
+@keyframes tourPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 30%, transparent)
+  }
+
+  50% {
+    box-shadow: 0 0 0 9px transparent
+  }
+}
+
+[data-theme="dark"] #tourbox .t-dim {
+  background: rgba(0, 0, 0, .55)
+}
+
+@media(max-width:480px) {
+  #tourbox .t-card {
+    bottom: 86px
   }
 }

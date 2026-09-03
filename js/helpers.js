@@ -19,6 +19,35 @@ function ago(ts) { const s = (Date.now() - ts) / 1000; if (s < 60) return 'à l\
 function typeIcon(t) { return state.settings.cb ? (t === 'in' ? 'north' : 'south') : (t === 'in' ? 'login' : 'logout') }
 function seriesColors() { return state.settings.cb ? ['#2f6df6', '#e8890b'] : [cssVar('--green', '#0fc37e'), cssVar('--blue', '#0d6ef2')] }
 
+/* ================= SYNTHÈSE VOCALE (annonce au scan) ================= */
+let _synth = null, _synthVoices = [];
+function synthVoices() {
+  try { if (typeof speechSynthesis !== 'undefined') _synth = speechSynthesis } catch (e) { }
+  return _synthVoices;
+}
+if (typeof speechSynthesis !== 'undefined') {
+  try {
+    speechSynthesis.onvoiceschanged = () => { _synthVoices = speechSynthesis.getVoices() || [] };
+    _synthVoices = speechSynthesis.getVoices() || [];
+  } catch (e) { }
+}
+/* Annonce vocale française : coupe l'annonce précédente, puis prononce le texte. */
+function speak(text) {
+  try {
+    if (typeof speechSynthesis === 'undefined') return;
+    const voices = synthVoices();
+    if (!voices.length) return;             // moteur indisponible (ex. tests headless)
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    const fr = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+    if (fr) u.voice = fr;
+    u.rate = 1.02; u.pitch = 1; u.volume = .95;
+    u.onerror = () => { };
+    speechSynthesis.speak(u);
+  } catch (e) { }
+}
+
 
 /* ================= AVATARS ================= */
 function initials(u) { return (u.prenom || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() }

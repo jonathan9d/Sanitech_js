@@ -133,6 +133,11 @@ Sanitech/
     ├── samsungone-700.woff
     ├── samsungone-800.woff
     └── material-symbols-rounded.woff2
+
+Sanitech_ESP32_CAM/   (matériel ESP32 — contrôle d'accès)
+├── Sanitech_ESP32_CAM.ino   → Firmware ESP32-CAM : point d'accès SANITECH, caméra, LCD
+├── brochage.md              → Brochage ESP32-CAM + DHT22 + LCD
+└── readmeEsp.md             → Contrat de l'ESP « Porte » : client Wi-Fi SANITECH + servo
 ```
 
 ---
@@ -197,6 +202,50 @@ The application does not require:
 Application data is stored locally on the user's device.
 
 > **Your data stays on your machine.**
+
+---
+
+##  ESP32 Access Control (2 ESPs on the Wi-Fi network « SANITECH »)
+
+Sanitech can drive a **servo-controlled door / gate**: a badge scanned in front of the camera opens the door automatically when the user is valid.
+
+### The two ESPs
+
+```text
+ESP #1  ESP32-CAM (AI-Thinker)  → creates the Wi-Fi access point « SANITECH »
+                                  (password 12345678, IP 192.168.4.1)
+                                  camera image for QR decoding + LCD display
+                                  firmware: Sanitech_ESP32_CAM/Sanitech_ESP32_CAM.ino
+
+ESP #2  Plain ESP32 (no camera) → joins the SANITECH network as a Wi-Fi client
+                                  and drives the servo motor (door / gate)
+                                  developed independently — contract in
+                                  Sanitech_ESP32_CAM/readmeEsp.md
+
+The phone / tablet running Sanitech also connects to the SANITECH network.
+```
+
+### How a valid user opens the door
+
+1. The scanner (phone camera or ESP #1) reads the QR badge of the person at the door.
+2. The application decodes the QR locally (jsQR), looks up the user, and decides: **badge unknown** or **archived user** → refused, no door opening.
+3. A **valid entry** (`ENTREE OK` / `ENTREE RETARD`) is recorded, and the application immediately sends a JSON signal to ESP #2:
+
+   ```http
+   POST http://192.168.4.2/open
+   Content-Type: application/json
+
+   {"valid":true,"action":"open","type":"in","name":"Jean Dupont","uid":"E0042","ts":1725372000000}
+   ```
+
+4. ESP #2 activates its servo: the gate opens for a few seconds, then closes by itself.
+5. **Exits** (`SORTIE OK`) are logged but do **not** open the door; only a valid entry does.
+
+### Configuration & addresses
+
+* In the **Scanner** tab (source ESP32-CAM), two addresses are editable: the camera (`http://192.168.4.1` by default) and the gate ESP (`http://192.168.4.2` by default). The gate ESP should use a **static IP** (`192.168.4.2`) so the app can always find it, whatever the order in which devices join the access point.
+* The button **« Tester la liaison »** checks that both ESPs are reachable.
+* All the details needed to build ESP #2 (Wi-Fi settings, HTTP contract `GET /` and `POST /open`, JSON payloads, CORS, servo wiring and a reference Arduino sketch) are in **`Sanitech_ESP32_CAM/readmeEsp.md`**.
 
 ---
 

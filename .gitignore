@@ -24,3 +24,6 @@ Thumbs.db
 
 # Outil de conversion de polices (local)
 .venv-font/
+
+# Compilation ESP32 : bibliothèque esp32-camera téléchargée en local pour arduino-cli
+.arduino-tmp/

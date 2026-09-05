@@ -7,6 +7,7 @@
 const SCAN_SRC_PHONE = 'phone';
 const SCAN_SRC_ESP = 'esp32';
 const ESP_DEFAULT_ORIGIN = 'http://192.168.4.1';
+const ESP_GATE_DEFAULT_ORIGIN = 'http://192.168.4.2';
 const SCAN_COOLDOWN_MS = 2400;
 const SCAN_DECODE_MAX_W = 640;
 const ESP_FAIL_LIMIT = 6;
@@ -33,10 +34,19 @@ function scanOrigin() {
   return raw.replace(/\/+$/, '');
 }
 
+/* Adresse HTTP de l'ESP « Porte » (client Wi-Fi SANITECH, pilote le servo).
+ * Vide = signal d'ouverture désactivé. */
+function gateOrigin() {
+  const el = $('#scan-gate-url');
+  const raw = (el && el.value.trim()) || (state.settings && state.settings.espGateUrl) || ESP_GATE_DEFAULT_ORIGIN;
+  return raw.replace(/\/+$/, '');
+}
+
 function persistScanPrefs() {
   if (!state.settings) return;
   state.settings.scanSource = scanSource;
   state.settings.espCamUrl = scanOrigin();
+  state.settings.espGateUrl = gateOrigin();
   if (scanRot) state.settings.scanRot = { ...scanRot };
   save();
 }
@@ -119,6 +129,36 @@ function notifyEspLcd(line1, line2) {
     body,
     cache: 'no-store'
   }).catch(() => { });
+}
+
+/* Signal « utilisateur valide » vers l'ESP « Porte » (client Wi-Fi SANITECH).
+ * Envoyé uniquement pour une ENTRÉE valide (ENTREE OK / ENTREE RETARD) :
+ * l'ESP reçoit valid=true et actionne son servo (ouverture de la porte).
+ * Le contrat exact figure dans Sanitech_ESP32_CAM/readmeEsp.md. */
+function notifyEspGateOpen(user, punchType) {
+  const origin = gateOrigin();
+  if (!origin || !user) return;
+  const host = origin.replace(/^https?:\/\//, '');
+  const body = JSON.stringify({
+    valid: true,
+    action: 'open',
+    type: punchType || 'in',
+    name: toLcd(((user.prenom || '') + ' ' + (user.nom || '')).trim()),
+    uid: String(user.uid || ''),
+    ts: Date.now()
+  });
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 1500);
+  fetch(origin + '/open', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    signal: ctrl.signal,
+    cache: 'no-store'
+  })
+    .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); })
+    .catch(() => toast('Porte : pas d\u2019ouverture (' + host + ') — ouvrez manuellement', 'warning', 'err'))
+    .finally(() => clearTimeout(t));
 }
 
 function getScanCanvas() {
@@ -341,6 +381,8 @@ function initScannerTab() {
   if (state.settings && state.settings.scanRot) scanRot = { ...state.settings.scanRot };
   const urlIn = $('#scan-esp-url');
   if (urlIn && state.settings && state.settings.espCamUrl) urlIn.value = state.settings.espCamUrl;
+  const gateIn = $('#scan-gate-url');
+  if (gateIn && state.settings && state.settings.espGateUrl) gateIn.value = state.settings.espGateUrl;
   applySourceUi();
 
   const btnToggle = $('#btn-toggle-scan');
@@ -405,8 +447,26 @@ function initScannerTab() {
       }
     });
   }
+  const gateEl = $('#scan-gate-url');
+  if (gateEl) {
+    gateEl.addEventListener('change', () => persistScanPrefs());
+  }
   /* Mode forcé retiré : le scan bascule automatiquement Entrée ↔ Sortie. */
   scanMode = 'auto';
+}
+
+async function probeGateEsp() {
+  const origin = gateOrigin();
+  if (!origin) return null;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 2500);
+    const res = await fetch(origin + '/', { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(t);
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
 }
 
 async function probeEspManual() {
@@ -422,9 +482,12 @@ async function probeEspManual() {
     const info = await res.json();
     const lcd = info.lcd ? 'LCD OK' : 'LCD absent';
     const cam = info.camera === false ? 'caméra HS' : 'caméra OK';
-    setEspStatus(info.camera !== false, cam + ' · ' + lcd + ' · ' + (info.clients || 0) + ' client(s)');
-    toast('ESP32-CAM joignable', 'check_circle', 'ok');
-    beep('success');
+    const gateOk = await probeGateEsp();
+    const gateTxt = gateOk === null ? 'porte non configurée' : (gateOk ? 'porte OK' : 'porte HS');
+    const allOk = info.camera !== false && gateOk !== false;
+    setEspStatus(allOk, cam + ' · ' + lcd + ' · ' + gateTxt + ' · ' + (info.clients || 0) + ' client(s)');
+    toast(gateOk ? 'Liaison OK : caméra + porte' : 'ESP32-CAM joignable — porte injoignable', gateOk ? 'check_circle' : 'warning', gateOk ? 'ok' : 'err');
+    beep(gateOk ? 'success' : 'error');
   } catch (e) {
     setEspStatus(false, 'Injoignable — Wi-Fi SANITECH / 12345678 requis');
     toast('Impossible de joindre l\'ESP32-CAM', 'wifi_off', 'err');
@@ -603,6 +666,10 @@ function handleScannedCode(rawText) {
   const late = punchType === 'in' && isLate();
   const l1 = punchType === 'in' ? (late ? 'ENTREE RETARD' : 'ENTREE OK') : 'SORTIE OK';
   notifyEspLcd(l1, (user.prenom || '') + ' ' + (user.nom || ''));
+
+  /* Entrée valide → ordre d'ouverture de la porte (ESP « Porte », client Wi-Fi SANITECH).
+   * Une sortie (SORTIE OK) est enregistrée mais n'ouvre pas la porte. */
+  if (punchType === 'in') notifyEspGateOpen(user, punchType);
 }
 
 function renderScanSuccess(user, punchType, meta = {}) {

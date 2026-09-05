@@ -317,7 +317,15 @@
                     id="scan-cam-device" title="Choisir la caméra"></select></div>
               </div>
               <div id="scan-esp-bar" class="scan-esp-bar" hidden>
+                <div class="scan-esp-fields">
+                  <label class="sef"><span>Caméra — ESP32-CAM</span><input id="scan-esp-url" type="url"
+                      inputmode="url" spellcheck="false" autocomplete="off" placeholder="http://192.168.4.1"></label>
+                  <label class="sef"><span>Porte — ESP servo (client)</span><input id="scan-gate-url" type="url"
+                      inputmode="url" spellcheck="false" autocomplete="off" placeholder="http://192.168.4.2"></label>
+                </div>
                 <p id="scan-esp-status" class="scan-esp-status">Wi-Fi <b>SANITECH</b> · mot de passe <b>12345678</b></p>
+                <button class="btn soft-blue sm rip" id="scan-esp-ping" type="button"><span
+                    class="mi">router</span>Tester la liaison</button>
               </div>
               <div class="scanner-viewport">
                 <video id="scan-video" playsinline muted></video>
@@ -1014,7 +1022,7 @@
           <div class="guide-num">4</div>
           <div class="guide-content">
             <h4>Scanner QR</h4>
-            <p>L'onglet Scanner lit les badges en direct via la caméra du téléphone ou l'ESP32-CAM (Wi-Fi SANITECH, mdp : 12345678).</p>
+            <p>L'onglet Scanner lit les badges en direct via la caméra du téléphone ou l'ESP32-CAM (Wi-Fi SANITECH, mdp : 12345678). Un badge valide à l'entrée ouvre automatiquement la porte pilotée par le 2ᵉ ESP (servo).</p>
           </div>
         </div>
 
@@ -1065,6 +1073,9 @@
           </div>
           <div class="acc"><button class="acc-head"><span class="mi">wifi_off</span>L'ESP32-CAM ne répond pas<span class="mi chev">expand_more</span></button>
             <div class="acc-body"><div>Connectez-vous au Wi-Fi SANITECH (mot de passe 12345678), puis attendez 10 secondes avant de scanner.</div></div>
+          </div>
+          <div class="acc"><button class="acc-head"><span class="mi">lock_open</span>Le badge est validé mais la porte ne s'ouvre pas<span class="mi chev">expand_more</span></button>
+            <div class="acc-body"><div>Vérifiez que l'ESP « Porte » est bien connecté au Wi-Fi SANITECH (IP fixe 192.168.4.2 conseillée) puis testez la liaison dans le Scanner. Contrat détaillé : <b>Sanitech_ESP32_CAM/readmeEsp.md</b>.</div></div>
           </div>
           <div class="acc"><button class="acc-head"><span class="mi">sync</span>Les données ne s'affichent pas<span class="mi chev">expand_more</span></button>
             <div class="acc-body"><div>Tirez vers le bas pour actualiser. Vérifiez que la base SQLite est bien initialisée dans À propos.</div></div>

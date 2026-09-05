@@ -5,7 +5,7 @@
 /* ================= STATE ================= */
 const KEY = 'sanitech_v1';
 let state = null;
-function defaults() { return { accounts: [{ username: 'admin', pass: 'admin123', email: 'admin@sanitech.io' }], users: [], logs: [], settings: { theme: 'light', sound: true, notif: true, accent: '#0d6ef2', uview: 'list', period: 14, selfie: false, voice: true, services: ['Maintenance', 'Technique', 'Direction', 'Administration', 'Développement', 'Comptabilité'], tourDone: false, autoOut: { on: false, time: '19:00' }, lateTime: '08:30', textSize: 'S', pattern: 'none', cb: false, sessionLimit: 0, autoArch: { on: false, days: 60 }, summary: { on: true, time: '18:00' }, otThreshold: 8, dense: false, lateAlert: true, autoDark: { on: false, from: '20:00', to: '07:00' }, scanSource: 'phone', espCamUrl: 'http://192.168.4.1', kpis: [{ id: 'pres', on: true }, { id: 'in', on: true }, { id: 'out', on: true }, { id: 'total', on: true }, { id: 'assid', on: true }, { id: 'hours', on: true }, { id: 'late', on: false }, { id: 'ot', on: false }] }, session: null, sessionStart: null, seq: 1001, pin: { enabled: false, code: null, timeout: 3 }, requests: [], notifs: [], trash: [], autoOutLast: null, summaryLast: null } }
+function defaults() { return { accounts: [{ username: 'admin', pass: 'admin123', email: 'admin@sanitech.io' }], users: [], logs: [], settings: { theme: 'light', sound: true, notif: true, accent: '#0d6ef2', uview: 'list', period: 14, selfie: false, voice: true, services: ['Maintenance', 'Technique', 'Direction', 'Administration', 'Développement', 'Comptabilité'], tourDone: false, autoOut: { on: false, time: '19:00' }, lateTime: '08:30', textSize: 'S', pattern: 'none', cb: false, sessionLimit: 0, autoArch: { on: false, days: 60 }, summary: { on: true, time: '18:00' }, otThreshold: 8, dense: false, lateAlert: true, autoDark: { on: false, from: '20:00', to: '07:00' }, scanSource: 'phone', espCamUrl: 'http://192.168.4.1', espGateUrl: 'http://192.168.4.2', kpis: [{ id: 'pres', on: true }, { id: 'in', on: true }, { id: 'out', on: true }, { id: 'total', on: true }, { id: 'assid', on: true }, { id: 'hours', on: true }, { id: 'late', on: false }, { id: 'ot', on: false }] }, session: null, sessionStart: null, seq: 1001, pin: { enabled: false, code: null, timeout: 3 }, requests: [], notifs: [], trash: [], autoOutLast: null, summaryLast: null } }
 /* Sauvegarde : écrit l'état dans la base SQLite (js/db.js). */
 function save() { if (dbReady) dbSyncState(); }
 function ensureState() {
@@ -30,6 +30,7 @@ function ensureState() {
   if (state.settings.tourDone === undefined) state.settings.tourDone = false;
   if (!state.settings.scanSource) state.settings.scanSource = 'phone';
   if (!state.settings.espCamUrl) state.settings.espCamUrl = 'http://192.168.4.1';
+  if (!state.settings.espGateUrl) state.settings.espGateUrl = 'http://192.168.4.2';
 }
 function purgeTrash() { state.trash = state.trash.filter(t => Date.now() - t.at < 30 * 864e5) }
 function mklog(u, type, ts) { return { id: uid(), userId: u.id, name: u.prenom + ' ' + u.nom, type, ts, source: 'seed', late: false, photo: null } }

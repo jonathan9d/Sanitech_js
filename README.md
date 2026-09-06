@@ -1,7 +1,8 @@
 <<<<<<< HEAD
 # Sanitech 3.2 — Attendance & Access Management
 
-**Sanitech** is a fully offline attendance and access management application designed for QR-code check-in, selfie verification, absence requests, statistics, calendars, automation, and PIN-based security.
+**Sanitech** is a fully offline attendance and access management application designed for QR-code check-in, selfie verification, absence requests, statistics, calendars, automation, and PIN-based security. :)
+
 
 > **100% Offline** — No internet connection, server, or user account is required. All application assets, including fonts, icons, and the database engine, are bundled locally.
 

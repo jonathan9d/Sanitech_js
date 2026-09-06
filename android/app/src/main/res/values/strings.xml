@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Sanitech</string>
-    <string name="title_activity_main">Sanitech</string>
-    <string name="package_name">com.sanitech.app</string>
-    <string name="custom_url_scheme">com.sanitech.app</string>
-</resources>
